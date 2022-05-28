@@ -1,0 +1,71 @@
+import numpy as np
+import random
+
+class Centroid:
+    def __init__(self, location):
+        self.location = location
+        self.closest_users = set()
+
+    def set_loc(self, location):
+      self.location = location
+
+    def add_closest_uesr(self, user):
+      self.closest_users.add(user)
+
+    def distance(self, user):
+        a = np.array(self.location)
+        return np.sum(np.abs(user - a), axis=1)
+    
+    def __str__(self):
+      print(self.location)
+
+
+def get_k_means(user_feature_map, num_features_per_user, k):
+    # Don't change the following two lines of code.
+    random.seed(42)
+    # Gets the inital users, to be used as centroids.
+    initial_centroid_users = random.sample(sorted(list(user_feature_map.keys())), k)
+    # print(initial_centroid_users)
+
+    # Write your code here.
+    # create centroid for each initial_centroid_user
+    centroids = []
+    for c in initial_centroid_users:
+      centroids.append(Centroid(user_feature_map[c]))
+
+    # data points
+    X = list(user_feature_map.values())
+    # print(X)
+
+    itr = 15
+    # iterating 15 times
+    for i in range(itr):
+      # find distance from each centroid
+      dist = []
+      for j in range(k):
+        dist.append(centroids[j].distance(X))
+
+      # assign data points to centroid
+      minimum = np.argmin(dist, axis=0)
+      # print(minimum)
+      for uid, cen in enumerate(minimum):
+        centroids[cen].add_closest_uesr(uid)
+      # print([centroids[ind].closest_users for ind in range(len(centroids))])
+
+      # computing mean and updating
+      for cen in range(len(centroids)):
+        centroids[cen].set_loc(np.mean([X[user] for user in centroids[cen].closest_users], axis=0))
+        # print(centroids[cen].location)
+
+    return centroids
+
+k = int(input("Enter value of k: "))
+num_feat = len(list(user_feature_map.values())[0])
+centroids = get_k_means(user_feature_map, num_feat, k)
+
+c = []
+print("Location of centroids")
+for cen in centroids:
+  c.append(list(cen.location))
+
+print(c)

@@ -1,0 +1,73 @@
+from collections import Counter
+import math
+
+class MultinomialNB:
+    def __init__(self, articles_per_tag):
+        # Don't change the following two lines of code.
+        self.articles_per_tag = articles_per_tag  # See question prompt for details.
+        self.vocab = set()      
+        self.labels = self.articles_per_tag.keys()
+        self.prior_class = {}
+        self.conditional_prob = {}
+        self.non_word_prob = {}
+        self.train()
+
+    def train(self):
+      
+      dic = {}
+      class_freq = {}
+      for label in self.labels:
+        doc = self.articles_per_tag[label]
+
+        # number of documents in each class
+        self.prior_class[label] = len(doc)
+        dic[label] = Counter()
+        for i in doc:
+          # to ignore case
+          dic[label].update(map(str.lower, i))
+      
+        self.vocab = self.vocab.union(dic[label])
+        
+        # frequency of word in class
+        class_freq[label] = sum(dic[label].values())
+      
+      # prior probability of class
+      total_word = sum(class_freq.values())
+      total_doc = sum(self.prior_class.values())
+      for label in self.labels:
+        self.prior_class[label] = math.log(self.prior_class[label]/total_doc)
+
+        self.conditional_prob[label] = {}
+        for word, freq in dic[label].items():
+          self.conditional_prob[label][word] = math.log((freq+1)/(class_freq[label]+2)) # add 2 instead of len(self.vocab) as asked in question
+        
+        # if word is not in a class, then its count will be zero but present in vocab
+        self.non_word_prob[label] = math.log(1/(class_freq[label]+2))
+
+      # print(self.prior_class)
+      # print(self.conditional_prob)
+      # print(self.non_word_prob)
+
+
+    def predict(self, article):
+      prediction = {}
+      for label in self.labels:
+        prediction[label] = self.prior_class[label]
+        for word in article:
+          if word not in self.vocab:
+            # if word is not present in vocabulary then its probability is 0.5
+            word_prob = math.log(0.5)
+          elif word not in self.conditional_prob[label]:
+            word_prob = self.non_word_prob[label]
+          else:
+            word_prob = self.conditional_prob[label][word]
+          prediction[label] = prediction[label] + word_prob
+          # print("{}:{}".format(label, word_prob))
+      return prediction
+
+mnb = MultinomialNB(articles_per_tag)
+
+# testing
+article = ["article", "writes", "while", "when", "owned", "Plus", "wanted", "upgrade", "memory", "just", "ordered", "toolkit", "from", "Macwarehouse", "something", "like", "included", "antistatic"]
+output = mnb.predict(article)
+print(output)
